@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+   <body>
+      <form action = "http://localhost:5000/uploader" method = "POST"
+         enctype = "multipart/form-data" id="form">
+         <p>Select frequency to resample file to (default will be 32kHz):</p>
+         <input type="radio" id="8kHz" name="resample_rate" value=8000>
+         <label for="8kHz">8000 Hz</label><br>
+         <input type="radio" id="11kHz" name="resample_rate" value=11025>
+         <label for="11kHz">11025 Hz</label><br>
+         <input type="radio" id="16kHz" name="resample_rate" value=16000>
+         <label for="16kHz">16000 Hz</label><br>
+         <input type="radio" id="22kHz" name="resample_rate" value=22050>
+         <label for="22kHz">22050 Hz</label><br>
+         <input type="radio" id="32kHz" name="resample_rate" value=32000>
+         <label for="32kHz">32000 Hz</label><br>
+         <input type="radio" id="44kHz" name="resample_rate" value=44100>
+         <label for="44kHz">44100 Hz</label><br>
+         <input type="radio" id="48kHz" name="resample_rate" value=48000>
+         <label for="48kHz">48000 Hz</label><br>
+         <br>
+
+         <p>Produce a plot showing the impact of the resampling?</p>
+         <input type="radio" id="yes" name="make_plot" value=True>
+         <label for="yes">Yes Please   (`･(∞)･´)</label><br>
+         <input type="radio" id="no" name="make_plot" value=False>
+         <label for="no">No Thank You! [ ಠ (∞) ಠ ]</label><br>
+
+
+         <input type = "file" name = "file" /><br>
+         <br>
+         <input type = "submit" form="form" value="Submit"/><br>
+      </form>
+   </body>
+</html>

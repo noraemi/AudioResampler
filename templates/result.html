@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Result</title>
+</head>
+<body>
+    <img src="http://localhost:5000/{{ image }}" width="25%" height="25%"/><br>
+    <br>
+    <form action = "http://localhost:5000/{{ file }}" method = "GET"
+         enctype = "multipart/form-data" id="form">
+        <button> Get your audio file!</button>
+    </form>
+</body>
+</html>
