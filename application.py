@@ -33,6 +33,13 @@ def hello():
     return 'Hello!!'
 
 
+@app.route('/resampler/')
+def resample():
+    """Landing page for uploading file via web-browser
+    """
+    return render_template('upload.html', sample_rate_list=ALLOWED_FREQUENCIES)
+
+
 def process_request():
     """Read parameters from the POST request
     """
@@ -79,6 +86,16 @@ def resample_audio_file():
     return load_file(new_file)
 
 
+@app.route('/resampler/audio/file_and_image', methods=['POST', 'GET'])
+def resample_audio_file_image():
+    """Loads a web-form to upload a file and allows the client to specify the sample rate and if a plot visualising
+    the results are wished for
+    Default value of 32000 Hz for the samples rate is used if the form is left blank
+    """
+    new_file, image = process_request()
+
+    return new_file, image
+
 @app.route('/resampler/audio/url', methods=['POST', 'GET'])
 def resample_audio_url():
     """Loads a web-form to upload a file and allows the client to specify the sample rate and if a plot visualising
@@ -95,8 +112,10 @@ def resample_audio_result():
     """ returns the results via a web interface
     where the plot, if requested, is shown and a path to the download the file is possible
     """
-    new_file, image = resample_audio_file()
+    new_file, image = resample_audio_file_image()
     new_file_path = os.path.join(app.config['RESAMPLE_FOLDER'], new_file)
+    if image == '':
+        image = '/templates/images/party.png'
     return render_template('result.html', image=image, file=new_file_path)
 
 
