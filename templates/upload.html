@@ -2,11 +2,11 @@
 <html>
    <body>
 
-      <form action = "http://localhost:5000/uploader" method = "POST"
+      <form action = "http://localhost:5000/resampler/audio/results" method = "POST"
          enctype = "multipart/form-data" id="form">
          <p>Select frequency to resample file to (default will be 32kHz):</p>
 
-         {% for sr in srlist %}
+         {% for sr in sample_rate_list %}
             <input type="radio" id="{{ sr }}" name="resample_rate" value={{ sr }}>
             <label for="{{ sr }}">{{ sr }} Hz</label><br>
          {% endfor %}

@@ -1,11 +1,13 @@
 import os
+import time
+import uuid
 from pathlib import Path
 
 from flask import Flask, render_template, request, send_from_directory, current_app
 import werkzeug
 from werkzeug.utils import secure_filename
 
-from resample import resample_file
+from resample import process_audio_file
 
 # Set up the app and configure it
 app = Flask(__name__)
@@ -16,11 +18,11 @@ app.config['IMAGE_FOLDER'] = 'templates/images'
 # Variables needed
 ALLOWED_EXTENSIONS = {'mp3', 'wav'}
 SAMPLE_FREQUENCY = '32000'
-ALLOWED_FREQUENCIES = [8000, 11025, 16000, 22050, 32000, 44100, 48000]
+ALLOWED_FREQUENCIES = [16000, 22050, 32000, 44100, 48000]
 
 
 def allowed_file(filename):
-    """Initial check if file is valid
+    """Initial check if file is valid depending on the file extension
     """
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -31,76 +33,71 @@ def hello():
     return 'Hello!!'
 
 
-@app.route('/upload')
-def upload():
-    """Landing page for uploading file via web-browser
+def process_request():
+    """Read parameters from the POST request
     """
-    return render_template('upload.html', srlist=ALLOWED_FREQUENCIES)
+
+    file = request.files['file']
+    filename = os.path.join(app.config['RESAMPLE_FOLDER'], secure_filename(str(uuid.uuid4())))
+    file.save(filename)
+
+    if file.filename == '' or not (file and allowed_file(file.filename)):
+        return redirect()
+
+    resample_frequency = request.form.get('resample_rate')
+    if resample_frequency is None:
+        resample_frequency = SAMPLE_FREQUENCY
+
+    do_plot = request.form.get('make_plot')
+    if not do_plot:
+        do_plot = 'False'
+
+    new_file, image = process_audio_file(filename, int(resample_frequency), do_plot, app.config['RESAMPLE_FOLDER'])
+
+    return new_file, image
 
 
-@app.route('/uploader', methods=['POST'])
-def uploader():
+@app.route('/resampler/audio/', methods=['POST'])
+def resample_audio():
     """Loads a web-form to upload a file and allows the client to specify the sample rate and if a plot visualising
     the results are wished for
     Default value of 32000 Hz for the samples rate is used if the form is left blank
     """
-    if request.method == 'POST':
-        file = request.files['file']
-        resample_frequency = request.form.get('resample_rate')
-        if not resample_frequency:
-            resample_frequency = SAMPLE_FREQUENCY
-
-        do_plot = request.form.get('make_plot')
-        if not do_plot:
-            do_plot = 'False'
-
-        # Check whether the file exist and is either an mp3 or a wav
-        if file.filename == '' or not (file and allowed_file(file.filename)):
-            return redirect()
-        else:
-            uploaded_file = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
-            file.save(uploaded_file)
-            try:
-                new_file, image = resample_file(uploaded_file, app.config['RESAMPLE_FOLDER'], int(resample_frequency),
-                                                do_plot)
-                print('I\'m a image: {}'.format(image))
-            except Exception as ex:
-                return handle_bad_request(ex)
-
-            return return_result(new_file, image)
+    new_file, image = process_request()
+    file = open(new_file, "rb")
+    return file.read()
 
 
-@app.route('/upload_file', methods=['POST'])
-def upload_file():
-    f = request.files['file']
-    resample_frequency = request.form.get('resample_rate')
-    if not resample_frequency:
-        resample_frequency = SAMPLE_FREQUENCY
+@app.route('/resampler/audio/file', methods=['POST', 'GET'])
+def resample_audio_file():
+    """Loads a web-form to upload a file and allows the client to specify the sample rate and if a plot visualising
+    the results are wished for
+    Default value of 32000 Hz for the samples rate is used if the form is left blank
+    """
+    new_file, image = process_request()
 
-    if f.filename == '' or not (f and allowed_file(f.filename)):
-        return redirect()
-    else:
-        uploaded_file = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename))
-        f.save(uploaded_file)
-        try:
-            new_file, image = resample_file(uploaded_file, int(resample_frequency), 'False')
-        except Exception as ex:
-            return handle_bad_request(ex)
-
-        return 'http://localhost:5000/{}/{}'.format(app.config['RESAMPLE_FOLDER'],
-                                                    Path(new_file).name)
+    return load_file(new_file)
 
 
-@app.route('/return', methods=['GET'])
-def return_result(file, image):
-    print('Im here: {} {}'.format(file, image))
-    file = Path(file).name
+@app.route('/resampler/audio/url', methods=['POST', 'GET'])
+def resample_audio_url():
+    """Loads a web-form to upload a file and allows the client to specify the sample rate and if a plot visualising
+    the results are wished for
+    Default value of 32000 Hz for the samples rate is used if the form is left blank
+    """
+    new_file, image = process_request()
+    server_url = 'http://localhost:5000/{}/{}'.format(app.config['RESAMPLE_FOLDER'], new_file)
+    return server_url
 
-    filepath = os.path.join(app.config['RESAMPLE_FOLDER'] + '/' + file)
 
-    if image == '':
-        image = 'templates/images/party.png'
-    return render_template('result.html', image=image, file=filepath)
+@app.route('/resampler/audio/results', methods=['GET', 'POST'])
+def resample_audio_result():
+    """ returns the results via a web interface
+    where the plot, if requested, is shown and a path to the download the file is possible
+    """
+    new_file, image = resample_audio_file()
+    new_file_path = os.path.join(app.config['RESAMPLE_FOLDER'], new_file)
+    return render_template('result.html', image=image, file=new_file_path)
 
 
 @app.route('/templates/images/<path:image_name>')
@@ -118,7 +115,7 @@ def load_file(file_name):
         return handle_bad_request(FileNotFoundError)
 
 
-@app.route('/wrongfile')
+@app.route('/file-error')
 def redirect():
     return 'File missing, or file is of wrong format, try again'
 
