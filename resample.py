@@ -1,21 +1,13 @@
 import os.path
 from pathlib import Path
 
-import librosa.display
-import matplotlib.pyplot as plt
-import numpy as np
-import librosa as lr
 from pydub import AudioSegment
-import soundfile as sf
 from pydub.utils import mediainfo
 
 import plotter
 
-RESAMPLE_FOLDER = 'RESAMPLES/'
-MAKE_PLOT = True
 
-
-def resample_file(filename, resample_rate, do_plot):
+def resample_file(filename, folder, resample_rate, do_plot):
     basename = Path(filename).stem
     converted_file = ''
 
@@ -46,7 +38,7 @@ def resample_file(filename, resample_rate, do_plot):
         converted_file = converted_file.set_frame_rate(resample_rate)
     except Exception as e:
         raise Exception('AudioSegment failed')
-    new_filename = os.path.join(RESAMPLE_FOLDER, basename + '.mp3')
+    new_filename = os.path.join(folder, basename + '.mp3')
     converted_file.export(new_filename, format='mp3')
 
     # Make a plot showing the original versus the resampled file

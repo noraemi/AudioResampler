@@ -7,35 +7,45 @@ from werkzeug.utils import secure_filename
 
 from resample import resample_file
 
-ALLOWED_EXTENSIONS = {'mp3', 'wav'}
-SAMPLE_FREQUENCY = '32000'
-
-
-def allowed_file(filename):
-    return '.' in filename and \
-           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
+# Set up the app and configure it
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['RESAMPLE_FOLDER'] = 'resamples'
 app.config['IMAGE_FOLDER'] = 'templates/images'
 
+# Variables needed
+ALLOWED_EXTENSIONS = {'mp3', 'wav'}
+SAMPLE_FREQUENCY = '32000'
+ALLOWED_FREQUENCIES = [8000, 11025, 16000, 22050, 32000, 44100, 48000]
+
+
+def allowed_file(filename):
+    """Initial check if file is valid
+    """
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 @app.route('/')
 def hello():
-    return 'Hello!!! :->'
+    return 'Hello!!'
 
 
 @app.route('/upload')
 def upload():
-    return render_template('upload.html')
+    """Landing page for uploading file via web-browser
+    """
+    return render_template('upload.html', srlist=ALLOWED_FREQUENCIES)
 
 
 @app.route('/uploader', methods=['POST'])
 def uploader():
+    """Loads a web-form to upload a file and allows the client to specify the sample rate and if a plot visualising
+    the results are wished for
+    Default value of 32000 Hz for the samples rate is used if the form is left blank
+    """
     if request.method == 'POST':
-        f = request.files['file']
+        file = request.files['file']
         resample_frequency = request.form.get('resample_rate')
         if not resample_frequency:
             resample_frequency = SAMPLE_FREQUENCY
@@ -44,13 +54,15 @@ def uploader():
         if not do_plot:
             do_plot = 'False'
 
-        if f.filename == '' or not (f and allowed_file(f.filename)):
+        # Check whether the file exist and is either an mp3 or a wav
+        if file.filename == '' or not (file and allowed_file(file.filename)):
             return redirect()
         else:
-            uploaded_file = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(f.filename))
-            f.save(uploaded_file)
+            uploaded_file = os.path.join(app.config['UPLOAD_FOLDER'], secure_filename(file.filename))
+            file.save(uploaded_file)
             try:
-                new_file, image = resample_file(uploaded_file, int(resample_frequency), do_plot)
+                new_file, image = resample_file(uploaded_file, app.config['RESAMPLE_FOLDER'], int(resample_frequency),
+                                                do_plot)
                 print('I\'m a image: {}'.format(image))
             except Exception as ex:
                 return handle_bad_request(ex)
@@ -115,7 +127,7 @@ def redirect():
 def handle_bad_request(e):
     print('Exception: {}'.format(str(e)))
     print('args: {}'.format(e.args))
-    return 'Bad request!', 400
+    return 'An Error Occurred: {}'.format(e.args[0])
 
 
 if __name__ == '__main__':
