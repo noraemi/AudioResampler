@@ -3,12 +3,7 @@
 FILE=$1
 OUTPUTFILE=$2
 
-# Install
-./install.sh
-
-# Run the flask
-./run.sh
-
+source env/bin/activate
 # Send a file and download the output
 curl -X POST -F "file=@${FILE}" http://localhost:5000/resampler/audio/file --output ${OUTPUTFILE}
 
