@@ -1,8 +1,9 @@
 import os
 import uuid
 
-from flask import Flask, render_template, request, send_from_directory, current_app
+from flask import Flask, render_template, request, send_from_directory, current_app, Response
 import werkzeug
+from werkzeug.exceptions import abort
 from werkzeug.utils import secure_filename
 
 from resample import process_audio_file
@@ -72,7 +73,13 @@ def process_request():
     else:
         logging.debug('Plot requested')
 
-    new_file, image = process_audio_file(filename, int(resample_frequency), do_plot, app.config['RESAMPLE_FOLDER'])
+    new_file = ''
+    image = ''
+    try:
+        new_file, image = process_audio_file(filename, int(resample_frequency), do_plot, app.config['RESAMPLE_FOLDER'])
+    except Exception as ex:
+        return handle_bad_request(ex)
+
     return new_file, image
 
 
@@ -159,8 +166,7 @@ def redirect():
 def handle_bad_request(e):
     """Handles the exceptions
     """
-    return 'An Error Occurred: {}'.format(e.args[0])
-
+    abort(Response('An Error Occurred: {}'.format(e.args[0]), 500))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=False)
