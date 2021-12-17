@@ -1,7 +1,7 @@
-#!bin/bash
+#!/bin/bash
 # set up local server
 
-FLASK_ENV="production"
-FLASK_APP="application.py"
+export FLASK_ENV="production"
+export FLASK_APP="application.py"
 
-flash run
+flask run

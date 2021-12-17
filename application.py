@@ -9,6 +9,8 @@ from werkzeug.utils import secure_filename
 from resample import process_audio_file
 import logging
 
+# TODO set up deletion of the temporary file
+
 # Set up the app and configure it
 app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads'
@@ -167,6 +169,7 @@ def handle_bad_request(e):
     """Handles the exceptions
     """
     abort(Response('An Error Occurred: {}'.format(e.args[0]), 500))
+
 
 if __name__ == '__main__':
     app.run(debug=False)
