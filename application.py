@@ -50,7 +50,8 @@ def process_request():
     """Read parameters from the POST request and call process_audio_file() from resample.py to return the resampled
     file together with an image if requested
     """
-
+    if not os.path.isdir(app.config['RESAMPLE_FOLDER']):
+        os.mkdir(app.config['RESAMPLE_FOLDER'])
     file = request.files['file']
     filename = os.path.join(app.config['RESAMPLE_FOLDER'], secure_filename(str(uuid.uuid4())))
     file.save(filename)
